@@ -7,21 +7,19 @@
 #include <netinet/in.h>	
 #include <sys/time.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #define MAXLINE 1024
 
-char NICK[12];
-
-
 using namespace std;
+
+
 
 int main(int argc, char *argv[])
 {
   
-	if(argc != 3)
+  if(argc != 3)
 	{
-		printf("Usage: %s <ip>:<port>\n", argv[0]);
+		perror("Error, arguments are incorrect.\nManual: ./client IP:Port.\n");
 		return EXIT_FAILURE;
 	}
 	unsigned short int SERVER_PORT = atoi(argv[2]);
@@ -85,14 +83,17 @@ while(isConnected)
 
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 	return 0;
-}
-
-
-
-void assign_NICK()
-{
-
-
-
 }
