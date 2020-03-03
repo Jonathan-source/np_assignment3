@@ -12,11 +12,16 @@ Implement a chat-server which is compatible with the chat-client. It must be abl
 # Chat Protocol
 _______________________________________________
 Client 	Direction 	Server
-Connect() 	--> 	
+Connect() 	-->
+ 	
 	<-- 	Hello <VERSION>
+
 NICK <nick> 	--> 	
+
 	<-- 	OK/ERR <text>
+
 MSG <text> 	--> 	
+
 	<-- 	MSG nick <text>/ERROR <text>
 _______________________________________________
 
