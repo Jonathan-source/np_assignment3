@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 
 	/* Add our first socket; the listening socket */
 	FD_SET(listener, &master);
-
+	int fdmax = listener;
 //=====================================================================================================
 // LOOP
 //=====================================================================================================
@@ -107,14 +107,15 @@ int main(int argc, char *argv[])
 			When it is passed into select(), the clients sending a message at that time will be copied.
 			The other sockets will be lost, hence we need to make a copy!
 		*/
-
-		fd_set copy = master;	
+		fd_set copy;
+		FD_ZERO(&copy);
+		copy = master;	
 
 		/* Check who's talking to the server */
-		int fdmax = select(0, &copy, NULL, NULL, NULL);
-		
+		select(fdmax + 1, &copy, NULL, NULL, NULL);
+
 		/* Loop through all the current connections | potential connections. */
-		for (i = 0; i < fdmax; i++)
+		for (i = 0; i <= fdmax; i++)
 		{
 			if(FD_ISSET(i, &copy))
 			{
@@ -127,7 +128,8 @@ int main(int argc, char *argv[])
 					{
 						perror("accept() failed.\n");
 					} 
-					else {
+					else 
+					{
 						// // Add the new connection to the list of connected clients.
 						FD_SET(newfd, &master);
 						// Updatera max.
@@ -138,17 +140,16 @@ int main(int argc, char *argv[])
 						printf("[+] New connection accepted from %s:%d, FD: %d\n", 
 							inet_ntoa(remoteAddr.sin_addr), ntohs(remoteAddr.sin_port), newfd);
 
-						sprintf(buffer, "Welcome to TCP Chat Server!\n");
-						send(newfd, buffer, strlen(buffer), 0);
+						send(newfd, "=== Welcome to TCP Chat Server! ===", sizeof("=== Welcome to TCP Chat Server! ==="), 0);
 					}
 				} 
 				else {
 					/* Receive message */
 					memset(&buffer, '\0', sizeof(buffer));
 					recvdBytes = recv(i, buffer, MAXLINE, 0);
-					if(recvdBytes == 0)
+					if(recvdBytes <= 0)
 					{	
-						printf("Selectserver: socket %d hung up\n", i);
+						printf("[-] Socket %d hung up\n", i);
 						// error.
 						close(i);
 						FD_CLR(i, &master);

@@ -7,7 +7,8 @@
 #include <netinet/in.h>	
 #include <sys/time.h>
 #include <unistd.h>
-#include <pthread.h>
+#include <errno.h>
+
 
 #define MAXLINE 1024
 
@@ -32,7 +33,7 @@ int main(int argc, char *argv[])
 
 	int sockfd;
 
-  	int rc = 0;
+  	int check = 0;
 
 	char buffer[MAXLINE];
 
@@ -47,21 +48,25 @@ int main(int argc, char *argv[])
 sockfd = socket(AF_INET, SOCK_STREAM, 0);
 if(sockfd < 0)
 {
-
+	perror("[-] Failed creating socket.\n");
+	return EXIT_FAILURE;
 }
 printf("[+] Socket was created.\n");
+
 
 memset(&servAddr, '\0', sizeof(servAddr));
 servAddr.sin_family = AF_INET;
 servAddr.sin_port = htons(SERVER_PORT);
 servAddr.sin_addr.s_addr = inet_addr(argv[1]);
 
-rc = connect(sockfd, (struct sockaddr *) &servAddr, sizeof(servAddr));
-if (rc < 0){
+check = connect(sockfd, (struct sockaddr *) &servAddr, sizeof(servAddr));
+if (check < 0)
+{
 	perror("[-] Error while connecting.\n");
 	return EXIT_FAILURE;
 }
 printf("[+] Sucessfully connected to %s:%d\n", inet_ntoa(servAddr.sin_addr), SERVER_PORT);
+
 
 
 //=====================================================================================================
@@ -72,17 +77,24 @@ while(isConnected)
 	/* Clear the buffer */
 	memset(&buffer, '\0', sizeof(buffer));
 
-	printf("Client: \t");
-	scanf("%s", &buffer[0]);
-	send(sockfd, buffer, strlen(buffer), 0);
-
-	if(recv(sockfd, buffer, MAXLINE, 0) < 0)
-	{
+	check = recv(sockfd, buffer, MAXLINE, 0);
+	if(check < 0)
+	{	
 		perror("[-] Error while receiving data.\n");
 		return EXIT_FAILURE;
 	}
-	printf("Server<echo>:\t%s\n", buffer);
+	printf("%s\n", buffer);
 
+	/* Clear the buffer */
+	memset(&buffer, '\0', sizeof(buffer));	
+
+	scanf("%s", &buffer[0]);
+	check = send(sockfd, buffer, strlen(buffer), 0);
+	if(check < 0)
+	{
+		perror("[-] Error while sending data.\n");
+		return EXIT_FAILURE;
+	}
 }
 
 	return 0;
