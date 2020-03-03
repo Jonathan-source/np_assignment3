@@ -5,12 +5,8 @@
 #include <sys/types.h> 		
 #include <sys/socket.h>		 
 #include <netinet/in.h>	
-#include <signal.h>
-#include <unistd.h>
 #include <sys/time.h>
 
-#include <calcLib.h>
-#include "protocol.h"
 
 #define MAXLINE 1024
 
@@ -23,7 +19,8 @@ int main(int argc, char *argv[])
   
   if(argc != 3)
 	{
-		perror("error, arguments are missing.");
+		perror("Error, arguments are incorrect.\nManual: ./client IP:Port.\n");
+		return EXIT_FAILURE;
 	}
 	unsigned short int SERVER_PORT = atoi(argv[2]);
 
@@ -35,6 +32,7 @@ int main(int argc, char *argv[])
 	int connfd;
 	int byteSent = 0;
   	int byteRcvd = 0;
+  	int rc = 0;
 
 	char buffer[MAXLINE];
 
@@ -48,7 +46,7 @@ int main(int argc, char *argv[])
 // TCP SOCKET.
 //=====================================================================================================
 sockfd = socket(AF_INET, SOCK_STREAM, 0);
-if(sockfd <0)
+if(sockfd < 0)
 {
 
 }
@@ -60,11 +58,12 @@ servAddr.sin_port = htons(SERVER_PORT);
 servAddr.sin_addr.s_addr = inet_addr(argv[1]);
 
 
-int ret =connect(sockfd, (struct sockaddr *) &servAddr, sizeof(servAddr));
-if (ret < 0){
-
+rc = connect(sockfd, (struct sockaddr *) &servAddr, sizeof(servAddr));
+if (rc < 0){
+	perror("[-] Error while connecting.\n");
+	return EXIT_FAILURE;
 }
-printf("[+] Sucessfully connected to the server.\n");
+printf("[+] Sucessfully connected to %s:%d\n", inet_ntoa(servAddr.sin_addr), SERVER_PORT);
 
 
 while(isConnected)
@@ -78,11 +77,13 @@ while(isConnected)
 		isConnected = false;
 	}
 
-	if(recv(sockfd, buffer, MAXLINE, 0) < 0){
-
-	} else {
-		printf("Server:\t%s\n", buffer);
+	if(recv(sockfd, buffer, MAXLINE, 0) < 0)
+	{
+		perror("[-] Error while receiving data.\n");
+		return EXIT_FAILURE;
 	}
+	printf("Server:\t%s\n", buffer);
+
 }
 
 
