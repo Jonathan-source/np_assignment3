@@ -31,8 +31,6 @@ int main(int argc, char *argv[])
 	int sockfd;
 	int newSocket;
 
-	int byteSent = 0;
-  	int byteRcvd = 0;
 	int rc = 0;
 
 	char buffer[MAXLINE];
@@ -83,6 +81,9 @@ int main(int argc, char *argv[])
 	printf("Listenning, waiting for connection on port: %u...\n\n", SERVER_PORT);
 
 
+//=====================================================================================================
+// LOOP
+//=====================================================================================================
 	while(isConnected)
 	{ 
 		newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &cliLen);
@@ -98,24 +99,19 @@ int main(int argc, char *argv[])
 		{
 			close(sockfd);
 		
-
 			while(1)
 			{
+				/* Clear the buffer */
+				memset(&buffer, '\0', sizeof(buffer));
+
 				recv(newSocket, buffer, MAXLINE, 0);
-				if(strcmp(buffer, ":exit") == 0)
-				{
-					printf("Disconnected from %s:%d", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
-					break;
-				} 
-				else 
-				{ 
-						printf("Client: %s\n", buffer);
-						send(newSocket, buffer, strlen(buffer), 0);
-						memset(&buffer, '\0', sizeof(buffer));
-				}
+				printf("Client: %s\n", buffer);
+				send(newSocket, buffer, strlen(buffer), 0);
 			}
 		}
 	}
+	close(newSocket);
+}
 
 	return	0;
 }
