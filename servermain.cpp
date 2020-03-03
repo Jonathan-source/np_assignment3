@@ -6,9 +6,10 @@
 #include <sys/socket.h>		 
 #include <netinet/in.h>	
 #include <sys/time.h>
+#include <unistd.h>
 
 #define MAXLINE 1024
-
+#define MAX_CLIENTS 5
 using namespace std;
 
 
@@ -28,8 +29,8 @@ int main(int argc, char *argv[])
 //=====================================================================================================
 
 	int sockfd;
-	int connfd;
 	int newSocket;
+
 	int byteSent = 0;
   	int byteRcvd = 0;
 	int rc = 0;
@@ -39,7 +40,9 @@ int main(int argc, char *argv[])
 	struct sockaddr_in servAddr;
 	struct sockaddr_in newAddr;
 
-	pid_t childpid;
+	socklen_t cliLen = sizeof(newAddr);
+
+	pid_t pid;
 
 	bool isConnected = true;
 
@@ -67,48 +70,49 @@ int main(int argc, char *argv[])
 	if (rc < 0)
 	{
 		perror("[-] Failed to bind socket.");
+		return EXIT_FAILURE;
 	}
 	printf("[+] Socket was successfully bound to %s:%d\n", inet_ntoa(servAddr.sin_addr), SERVER_PORT);
 	
 	/* Listen for connections. */
-	if(listen(sockfd, 1) < 0)
+	if(listen(sockfd, MAX_CLIENTS) < 0)
 	{	
-		perror("listen failed.");
+		perror("[-] Listen() failed.\n");
 		return EXIT_FAILURE;
 	}
-	printf("Listenning, waiting for connection on port: %ui...\n\n", SERVER_PORT);
+	printf("Listenning, waiting for connection on port: %u...\n\n", SERVER_PORT);
 
 
 	while(isConnected)
 	{ 
-		newSocket = socket(sockfd, (struct sockaddr*)&newAddr, sizeof(newAddr));
+		newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &cliLen);
 		if(newSocket < 0)
 		{
 			isConnected = false;
 			return EXIT_FAILURE;
 		}
-		printf("[+] Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntoa(newAddr.sin_port);
+		printf("[+] Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
 
-		socklen_t cliLen = sizeof(newAddr);
 
-		if((childpid = fork()) == 0)
+		if((pid = fork()) == 0)
 		{
 			close(sockfd);
-		}
+		
 
-		while(1)
-		{
-			recv(newSocket, buffer, MAXLINE, 0);
-			if(strcmp(buffer, ":exit") == 0)
+			while(1)
 			{
-				printf("Disconnected from %s:%d", inet_ntoa(newAddr.sin_addr), ntoa(newAddr.sin_port));
-				break;
-			} 
-			else 
-			{ 
-					printf("Client: %s\n", buffer);
-					send(newSocket, buffer, strlen(buffer), 0);
-					memset(&buffer, '\0', sizeof(buffer));
+				recv(newSocket, buffer, MAXLINE, 0);
+				if(strcmp(buffer, ":exit") == 0)
+				{
+					printf("Disconnected from %s:%d", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
+					break;
+				} 
+				else 
+				{ 
+						printf("Client: %s\n", buffer);
+						send(newSocket, buffer, strlen(buffer), 0);
+						memset(&buffer, '\0', sizeof(buffer));
+				}
 			}
 		}
 	}

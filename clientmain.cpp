@@ -6,7 +6,7 @@
 #include <sys/socket.h>		 
 #include <netinet/in.h>	
 #include <sys/time.h>
-
+#include <unistd.h>
 
 #define MAXLINE 1024
 
